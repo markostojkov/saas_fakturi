@@ -1,0 +1,58 @@
+{% extends "invoice/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="breadcrumbs">
+    <div class="breadcrumbs-inner">
+        <div class="row m-0">
+            <div class="col-sm-4">
+                <div class="page-header float-left">
+                    <div class="page-title">
+                        <h1>Клиенти</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="animated fadeIn">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <a href="{% url 'create_customer' %}" style="" type="button" class="btn btn-outline-primary">Додади клиент</a>
+                    </div>
+                    <div class="card-body">
+                        <table id="bootstrap-data-table" class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Име на клиент</th>
+                                    <th>Вредност %</th>
+                                </tr>
+                            </thead>
+                            <tbody> 
+                            {% for customer in customers %}
+                                <tr class="data-table-item">
+                                    <td><a class="btn btn-link" href="{{customer.get_customer_url}}">{{customer.name}}</a></td>
+                                    <td>{{tax.value}} %</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+        $(document).ready(function() {
+          $('#bootstrap-data-table-export').DataTable();
+      } );
+  </script>
+
+{% endblock content %}

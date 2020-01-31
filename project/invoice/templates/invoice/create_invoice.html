@@ -1,0 +1,308 @@
+{% extends "invoice/base.html" %}
+{% load crispy_forms_tags %}
+  
+{% block content %}
+<style>
+    .customer-id:hover{
+        cursor: pointer;
+        background-color: rgb(0, 123, 255, 0.5);
+    }
+    .col-md-3{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    @media screen and (max-width: 767px) {
+        .media-query {
+            margin-bottom: 0 !important;
+            text-align: center !important; 
+        }
+        .media-query-image{
+            display: block;
+            margin: auto;
+            padding-bottom: 1em;
+        }
+    }
+</style>
+
+<div class="breadcrumbs">
+    <div class="breadcrumbs-inner">
+        <div class="row m-0">
+            <div class="col-sm-4">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Нова фактура</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content">
+    <div class="animated fadeIn">
+        <div class="row m-auto">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <div class="row mb-5">
+                            <div class="col-md-6">
+                                <img src="{{company.logo.url}}" class="media-query-image" width="200" height="100">
+                            </div>
+                            <div class="col-md-6 text-right media-query">
+                                <div class="row">
+                                        <div class="col-md-3 ml-auto"><label for="slug" class=" form-control-label">Фактура #:</label></div>
+                                        <div class="col-md-6"><input id="id_id_number" type="text" value="{{invoice_id}}" disabled class="form-control form-control-sm"></div>
+                                </div>
+                                <div class="row">
+                                        <div class="col-md-3 ml-auto"><label for="disabled-input" class=" form-control-label">Издадена:</label></div>
+                                        <div class="col-md-6"><input required id="id_date_created" class="form-control form-control-sm" value="{{today_date}}" type="date"></div>
+                                </div>
+                                <div class="row">
+                                        <div class="col-md-3 ml-auto"><label for="disabled-input" class=" form-control-label">Доспевање:</label></div>
+                                        <div class="col-md-6"><input required id="id_payment_due" class="form-control form-control-sm" value="{{today_date}}" type="date"></div>
+                                </div>
+                                <div class="row">
+                                        <div class="col-md-3 ml-auto"><label for="disabled-input" class=" form-control-label">Град:</label></div>
+                                        <div class="col-md-6"><input required id="id_city" class="form-control form-control-sm" type="text" value={{user.company.city}} placeholder="Град"></div>
+                                </div>                                  
+                                 <div class="row">
+                                        <div class="col-md-3 ml-auto"><label for="disabled-input" class=" form-control-label">Валута:</label></div>
+                                        <div class="col-md-6"><select id="id_currency" class="form-control form-control-sm" name="currency_1"><option value="MKD" selected="">Denar</option><option value="EUR">Euro</option><option value="GBP">Pound Sterling</option><option value="CHF">Swiss Franc</option><option value="USD">US Dollar</option></select></div>
+                                </div>                                                                  
+                            </div>
+                        </div>
+                        <div class="row mb-5">
+                            <div class="col-md-6">
+                                <div class="vue-misc">
+                                    <div class="row">
+                                        <div class="col-md-8 media-query">
+                                            <h4 class="font-weight-bold">ФАКТУРИРАЛ:</h4>
+                                            <address>
+                                                <strong>{{company.name}}</strong><br>
+                                                <h5>{{company.address}}, {{company.city}} {{company.country}}<h5>
+                                                <h5>{{company.number}}</h5>
+                                                <h5>{{company.tax_number}}</h5>
+                                                <h5>{{company.bank}} {{company.account_number}}</h5>
+                                                <h5>{{company.website}}</h5>
+                                                <h5>{{company.email}}</h5>
+                                            </address>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-right media-query">
+                                <h4 class="font-weight-bold">ДО:</h4>
+                                <address id="customer-address"></address>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#exampleModal">Одберете клиент</button>
+                            </div>                           
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Продукт/Услуга</th>
+                                            <th scope="col">Цена</th>
+                                            <th scope="col">Количина</th>
+                                            <th scope="col">ДДВ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="product-table">
+                                    </tbody>
+                                </table>
+                                <button id="append-product" type="button" class="btn btn-outline-primary btn-sm mb-2"><i class="fa fa-plus"></i></button>
+                                <button id="remove-product" type="button" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa fa-minus"></i></button>
+                            </div>
+                        </div>
+                        <div class="row mb-5">
+                            <div class="col-md-4 ml-auto">
+                                <table class="table table-striped">
+                                    <tbody>
+                                        <tr>
+                                            <th>Сума:</th>
+                                            <td id="invoice-sum">0</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Данок:</th>
+                                            <td id="tax-sum">0</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Вкупно:</th>
+                                            <td id="full-sum">0</td>
+                                        </tr>         
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mb-5">
+                        <div class="col-md-12">
+                            <input placeholder="Забелешки" id="id_notes" type="text" name="" class="form-control">
+                        </div>
+                        </div>
+                        <form method="POST" id="invoice-form">{% csrf_token %}
+                            <input type="hidden" name="company" value="{{user.company.id}}">
+                            <input type="hidden" name="customer" value="">
+                            <input type="hidden" name="id_number" value="">                            
+                            <input type="hidden" name="date_created" value="">
+                            <input type="hidden" name="payment_due" value="">
+                            <input type="hidden" name="place" value="">
+                            <input type="hidden" name="notes" value="">
+                            <textarea rows="10" cols="40" name="items" value="" style="display: none;"></textarea>
+                            <input type="hidden" name="invoice_sum" value="">
+                            <input type="hidden" name="tax_sum" value="">
+                            <input type="hidden" name="full_sum" value="">
+                            <input type="hidden" name="currency" value="">
+                        </form>
+                        <button id="invoice-form-button" class="btn btn-outline-success">Зачувај</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        <div class="modal-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Име на клиент</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for customer in customers %}
+                    <tr>
+                        <th class="customer-id" customer-id={{customer.id}}>{{customer.name}}</th>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+            <div class="modal-footer">
+                <a class="btn-outline-primary btn-sm" href="{% url 'create_customer' %}">Додади нов клиент</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    $(document).ready(function(){
+        function calculate_sum() {
+            var invoice_sum = 0.0, tax_sum = 0.0, full_sum = 0.0;
+            var td_price = 0, td_amount = 0, td_tax = 0;
+
+            $('#product-table tr').each(function(){
+
+                td_price = parseFloat($('td .price', this).val());
+                td_amount = parseFloat($('td .amount', this).val());
+                td_tax = parseFloat($('td .tax', this).val());
+
+                invoice_sum += td_price * td_amount;
+                tax_sum += (td_price * td_amount) * (td_tax / 100);
+                full_sum += invoice_sum + tax_sum;
+                $('#invoice-sum').text(invoice_sum.toFixed(2));
+                $('#tax-sum').text(tax_sum.toFixed(2));
+                $('#full-sum').text(full_sum.toFixed(2));
+            })
+        }
+
+        $('#append-product').click(function(){
+            $('#product-table').append(`<tr>
+                                            <td>
+                                                <input placeholder="Продукт/Услуга" type="text"name="product" class="form-control form-control-sm name product-class">
+                                            </td>
+                                            <td>
+                                                <input placeholder="Цена" type="number" step="0.01" min="0.01" name="price" class="form-control form-control-sm price product-class">
+                                            </td>
+                                            <td>
+                                                <input placeholder="Количина" type="number" name="amount" class="form-control form-control-sm amount product-class">
+                                            </td>
+                                            <td>
+                                                <select name="tax" class="form-control form-control-sm tax product-class">
+                                                    {% for tax in taxes %}
+                                                    <option value="{{tax.value}}">{{tax.name}} {{tax.value}}%</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td></tr>`);
+
+        })
+        $('#remove-product').click(function(){
+            $('#product-table tr:last').closest('tr').remove();
+            if($('#product-table tr').length === 0){
+                $('#invoice-sum').text(0);
+                $('#tax-sum').text(0);
+                $('#full-sum').text(0);
+            }
+            else{
+               calculate_sum(); 
+            }          
+        })
+
+        $(document).on('input', '.product-class', function(){
+            calculate_sum();
+        })
+
+        $('.customer-id').click(function(){
+            var id = $(this).attr('customer-id');
+            var url = `/customer/get-customer/${id}`;
+
+            $.ajax({
+                url: url,
+                success: function(result){
+                    var id = result['id'];
+                    var name = result['name'];
+                    var address = result['address'];
+                    var phone = result['phone'];
+                    var email = result['email'];
+                    var tax_no = result['tax_no'];
+                    $('#customer-address').html(`<strong customer-id="${id}">${name}</strong><br>
+                                                <h5>${address}<h5>
+                                                <h5>${phone}</h5>
+                                                <h5>${tax_no}</h5>
+                                                <a href="mailto:${email}">${email}</a>`)
+                    $(".modal-backdrop").remove();
+                    $("#exampleModal").modal('toggle');
+                }
+            });
+        });
+
+        $('#invoice-form-button').click(function(){
+
+            var items = [], name, price, amount, tax;
+
+            $('#product-table tr').each(function(){
+                name = $('td .name', this).val();
+                price = $('td .price', this).val();
+                amount = $('td .amount', this).val();
+                tax = $('td .tax', this).val();
+                items.push({name, price, amount, tax,});
+            });
+
+            $('#invoice-form input[name ="customer"]').val($('#customer-address strong').attr('customer-id'));
+            $('#invoice-form input[name ="id_number"]').val($('#id_id_number').val());
+            $('#invoice-form input[name ="date_created"]').val($('#id_date_created').val());
+            $('#invoice-form input[name ="payment_due"]').val($('#id_payment_due').val());
+            $('#invoice-form input[name ="place"]').val($('#id_place').val());
+            $('#invoice-form input[name ="notes"]').val($('#id_notes').val());
+            $('#invoice-form textarea[name ="items"]').val(JSON.stringify(items));
+            $('#invoice-form input[name ="invoice_sum"]').val($('#invoice-sum').text());
+            $('#invoice-form input[name ="tax_sum"]').val($('#tax-sum').text());
+            $('#invoice-form input[name ="full_sum"]').val($('#full-sum').text());
+            $('#invoice-form input[name ="currency"]').val($('#id_currency').val());
+
+            $('#invoice-form').submit();
+        })
+
+    })
+
+</script>
+
+{% endblock content %}

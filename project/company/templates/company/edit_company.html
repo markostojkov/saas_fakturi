@@ -1,0 +1,46 @@
+{% extends "invoice/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="breadcrumbs">
+    <div class="breadcrumbs-inner">
+        <div class="row m-0">
+            <div class="col-sm-4">
+                <div class="page-header float-left">
+                    <div class="page-title">
+                        <h1>Ажурирај компанија</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <form method="POST" enctype="multipart/form-data">{% csrf_token %}
+            {{form|crispy}}
+        <button type="submit" class="btn btn-outline-success">Ажурирај</button>
+    </form>
+</div>
+
+<script>
+    
+    $(document).ready(function(){
+        $('#div_id_name label').text('Име на компанија*');
+        $('#div_id_address label').text('Адреса');
+        $('#div_id_number label').text('Телефонски број');
+        $('#div_id_city label').text('Град');
+        $('#div_id_country label').text('Држава');
+        $('#div_id_email label').text('Емаил');
+        $('#div_id_website label').text('Вебсајт');
+        $('#div_id_logo label').text('Лого');
+        $('#div_id_tax_number label').text('Даночен број');
+        $('#div_id_bank label').text('Банка');
+        $('#div_id_account_number label').text('Трансакциска сметка');
+        $('#div_id_default_currency label').text('Стандардна валута');
+    });
+
+</script>
+
+{% endblock content %}

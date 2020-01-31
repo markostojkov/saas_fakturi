@@ -1,0 +1,387 @@
+{% extends "invoice/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .hover i:hover{
+        cursor: pointer;
+        font-weight: bold;
+    }
+    @media screen and (max-width: 767px) {
+        .media-query {
+            margin-bottom: 0 !important;
+            text-align: center !important; 
+        }
+        .media-query-image{
+            display: block;
+            margin: auto;
+            padding-bottom: 1em;
+        }
+    }
+</style>
+
+<div id="messages"></div>
+
+<div class="content">
+    <div class="animated fadeIn">
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib"><i class="ti-money text-success border-success"></i></div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">Платено</div>
+                                <div class="stat-digit"><span id="sum-paid">{{invoice.paid_invoice_sum}}</span> {{invoice.currency}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>                
+            </div>
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib"><i class="ti-money text-danger border-danger"></i></div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">Преостанато</div>
+                                <div class="stat-digit"><span id="sum-left">{{invoice.leftover_invoice_sum}}</span> {{invoice.currency}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>                
+            </div> 
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="page-title">
+                                <h4 id="invoice_id" invoice-id="{{invoice.id}}">Фактура #: {{invoice.id_number}}</h4>
+                            </div>
+                            <div class="dropdown show">
+                                <button class="btn btn-primary btn-sm mt-3" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Повеќе <i class="ti-angle-down"></i></button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    <a class="nav-link" href="{{invoice.get_invoice_url}}/print">Печати</a>
+                                    <a class="nav-link" href="{{invoice.get_invoice_url}}/edit">Уреди</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                Испрати емаил до {{invoice.customer.name}} за оваа фактура
+                            </div>
+                            <div class="card-body card-block hover">
+                                <div id="is-mail-sent">
+                                    {% if invoice.mail_sent %}
+                                    <div class="alert alert-success" role="alert">
+                                        Имате испратено емаил!
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-danger" role="alert">
+                                        Немате испратено емаил!
+                                    </div>
+                                    <div class="alert alert-info" role="alert">
+                                        <i class="ti-alarm-clock"></i>
+                                        Заостанатите фактури имаат поголема веројатност да се платат кога испраќате потсетници.
+                                    </div>
+                                    {% endif %}
+                                </div>                                
+                                <form method="POST" id="send-email-form">
+                                    <input required class="form-control mb-2" type="text" placeholder="емаил" value="{{invoice.customer.email}}" name="email">
+                                    <input required class="form-control mb-2" type="text" placeholder="Наслов" name="subject">
+                                    <textarea class="form-control mb-2" type="text" placeholder="Текст" name="text"></textarea>
+                                    <div class="form-actions form-group">
+                                        <button type="submit" id="send-email-button" class="btn btn-primary btn-sm">Испрати</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>   
+                        <div class="card">
+                            <div class="card-header">
+                                Плаќања
+                            </div>
+                            <div class="card-body card-block hover" id="invoice-payments">
+                                {% for payment in invoice.paid_sum.all %}
+                                    <h6 class="mb-1">Датум: 
+                                        <span class="font-weight-bold">{{payment.date_paid}}</span> 
+                                        сума: 
+                                        <span class="font-weight-bold">{{payment.amount}} {{invoice.currency}} </span>
+                                        <a  title="Избриши" type="button" class="btn-link text-white hover bg-danger p-1 payment-id-button" payment-id={{payment.id}}><i class="ti-trash"></i></a>
+                                    </h6>
+                                {% endfor %}
+                            </div>
+                        </div>    
+                        <div class="card">
+                            <div class="card-header">Додади плаќање</div>
+                            <div class="card-body card-block">
+                                <form method="POST" id="create-payment-form">
+                                    {{payment_form|crispy}}
+                                    <div class="form-actions form-group">
+                                        <button type="submit" id="create-payment-button" class="btn btn-primary btn-sm">Додади</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="card card-body p-4">
+                            <div class="row mb-5">
+                                <div class="col-lg-6">
+                                    <img src="{{company.logo.url}}" class="media-query-image" width="200" height="100">
+                                </div>
+                                <div class="col-lg-6 text-right media-query">
+                                    <h3>Фактура #: {{invoice.id_number}}</h3>
+                                    <h4>Издадена: {{invoice.date_created}}</h4>
+                                    <h4>Доспевање: {{invoice.payment_due}}</h4>
+                                    <h4>Место: {{invoice.place}}</h4>
+                                </div>
+                            </div>
+                            <div class="row lg-5">
+                                <div class="col-lg-6">
+                                    <div class="vue-misc">
+                                        <div class="row">
+                                            <div class="col-lg-8 media-query">
+                                                <h4 class="font-weight-bold">ФАКТУРИРАЛ:</h4>
+                                                <address>
+                                                    <strong>{{company.name}}</strong><br>
+                                                    <h5>{{company.address}}, {{company.city}} {{company.country}}<h5>
+                                                    <h5>{{company.number}}</h5>
+                                                    <h5>{{company.tax_number}}</h5>
+                                                    <h5>{{company.bank}} {{company.account_number}}</h5>
+                                                    <h5>{{company.website}}</h5>
+                                                    <a>{{company.email}}</a>
+                                                </address>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 text-right media-query">
+                                    <h4 class="font-weight-bold">ДО:</h4>
+                                    <address>
+                                        <a class="font-weight-bold btn-link" href="{% url 'detail_customer' pk=invoice.customer.pk %}">{{invoice.customer.name}}</a><br>
+                                        <h5>{{invoice.customer.address}}<h5>
+                                        <h5>{{invoice.customer.phone}}</h5>
+                                        <h5>{{invoice.customer.tax_no}}</h5>
+                                        <a href="mailto:{{invoice.customer.email}}">{{invoice.customer.email}}</a>
+                                    </address>
+                                </div>                           
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Продукт/Услуга</th>
+                                                <th scope="col">Цена</th>
+                                                <th scope="col">Количина</th>
+                                                <th scope="col">ДДВ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in invoice.items %}
+                                            <tr>
+                                                <th>{{item.name}}</th>
+                                                <td>{{item.price}} {{invoice.currency}}</td>
+                                                <td>{{item.amount}}</td>
+                                                <td>{{item.tax}} %</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="row mb-5">
+                                <div class="col-lg-4 ml-auto">
+                                    <table class="table table-striped">
+                                        <tbody>
+                                            <tr>
+                                                <th>Сума:</th>
+                                                <td>{{invoice.invoice_sum}} {{invoice.currency}}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Данок:</th>
+                                                <td>{{invoice.tax_sum}} {{invoice.currency}}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Вкупно:</th>
+                                                <td><span id="full-invoice-sum">{{invoice.full_sum}}</span> {{invoice.currency}}</td>
+                                            </tr>         
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <h5>Забелешки:</h5>
+                                    <p>{{invoice.notes}}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    
+    $(document).ready(function(){
+
+        function checkPayments(array){
+            const full_sum = parseFloat($('#full-invoice-sum').text());
+            var paid_sum = 0.0;
+            for(var i in array){
+                paid_sum += parseFloat(array[i].amount);
+            }
+            $('#sum-paid').text(paid_sum.toFixed(2));
+            $('#sum-left').text((full_sum - paid_sum).toFixed(2));
+        }
+
+        $('#div_id_amount label').text('Сума {{invoice.currency}}*');
+        $('#div_id_notes label').text('Забелешки*');
+
+        //DELETING PAYMENT FUNCTIONS
+        function mapPayments(array){
+            checkPayments(array);
+            const content = array.map(payment => (`
+                <h6 class="mb-1">Датум: <span class="font-weight-bold">${payment.date_paid}</span> 
+                                        сума: 
+                                        <span class="font-weight-bold">${payment.amount} {{invoice.currency}} </span>
+                                        <a  title="Избриши" type="button" class="btn-link text-white hover bg-danger p-1 payment-id-button" payment-id=${payment.id}><i class="ti-trash"></i></a>
+                                    </h6>
+                `
+                ));
+            $('#invoice-payments').html(content);
+
+            Swal.fire(
+              'Успешно избришано плаќање!',
+              '',
+              'success'
+            );
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function deletePayment(payment_id){
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: `/payment/get-payment/${payment_id}/`,
+                    type: "DELETE",
+                    data: {'invoice_id': $('#invoice_id').attr('invoice-id')},
+                    success: function(result) {
+                        mapPayments(result);
+                    }
+                });
+        }
+        $(document).on('click', '.payment-id-button', function(){
+            var id = $(this).attr('payment-id');
+            deletePayment(id);
+        })
+        //DELETING PAYMENT FUNCTIONS
+
+        //CREATE PAYMENT FUNCTIONS
+        $(document).on('submit', '#create-payment-form', function(e){
+            e.preventDefault();
+
+            if($('#sum-left').text() !== '0.00'){
+
+                const amount = $('#id_amount').val();
+                const company_id = '{{user.company.id}}';
+                const invoice_id = '{{invoice.id}}';
+
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url : '/payment/get-payment/',
+                    type : "POST",
+                    data : { 'company': company_id, 'amount': amount, 'invoice_id': invoice_id},
+                    success : function(payment) {
+                        Swal.fire(
+                          'Успешно додадено плаќање!',
+                          '',
+                          'success'
+                        );
+                        $('#invoice-payments').append(`<h6 class="mb-1">Датум: 
+                                            <span class="font-weight-bold">${payment.date_paid}</span> 
+                                            сума: 
+                                            <span class="font-weight-bold">${payment.amount} {{invoice.currency}} </span>
+                                            <a  title="Избриши" type="button" class="btn-link text-white hover bg-danger p-1 payment-id-button" payment-id=${payment.id}><i class="ti-trash"></i></a>
+                                        </h6>`);
+
+                        var paid_sum = parseFloat($('#sum-paid').text()) + parseFloat(payment.amount);
+                        var left_sum = parseFloat($('#full-invoice-sum').text()) - paid_sum;
+                        $('#sum-paid').text(paid_sum.toFixed(2));
+                        $('#sum-left').text(left_sum.toFixed(2));
+
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    },
+                    error : function(xhr,errmsg,err) {
+                        Swal.fire(
+                          'Неуспешно додадено плаќање',
+                          '',
+                          'error'
+                        );
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+                this.reset();
+            }
+            else{
+                Swal.fire(
+                  'Целосно исплатено',
+                  '',
+                  'error'
+                );
+            }
+        })
+
+        //SEND EMAIL FUNCTIONS/AJAX
+
+        $(document).on('submit', '#send-email-form', function(e){
+
+            e.preventDefault();
+            var values = {};
+            $.each($('#send-email-form').serializeArray(), function(i, field) {
+                values[field.name] = field.value;
+            });
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: window.location.pathname,
+                type: "POST",
+                data: values,
+                success: function(result) {
+                    Swal.fire(
+                      'Успешно исплатен емаил!',
+                      '',
+                      'success'
+                    );
+
+                    $('#is-mail-sent').html(`<div class="alert alert-success" role="alert">
+                                        Имате испратено емаил!
+                                    </div>`);
+                },
+                error : function(xhr,errmsg,err) {
+                        Swal.fire(
+                          'Неуспешно исплатен емаил!',
+                          '',
+                          'error'
+                        );
+                    }
+            });
+
+            $(this).reset()
+        })
+
+    });
+
+</script>
+
+{% endblock content %}

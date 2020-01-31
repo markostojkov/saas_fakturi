@@ -1,0 +1,37 @@
+{% extends "invoice/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <div class="breadcrumbs-inner">
+        <div class="row m-0">
+            <div class="col-sm-4">
+                <div class="page-header float-left">
+                    <div class="page-title">
+                        <h1>Нов данок</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="content">
+    <form method="POST" enctype="multipart/form-data">{% csrf_token %}
+            {{form|crispy}}
+            <input type="hidden" name="company" value="{{user.company.id}}">
+        <button type="submit" class="btn btn-outline-success">Додади</button>
+    </form>
+</div>
+
+<script>
+    
+    $(document).ready(function(){
+        $('#div_id_name label').text('Име на данок*');
+        $('#div_id_value label').text('Вредност на данок*');
+        $('#div_id_value input').attr({'min': 0.01});
+ 
+    });
+
+</script>
+
+{% endblock content %}
